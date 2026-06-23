@@ -1,15 +1,16 @@
 # Multi-Agent Chatbot
 
-Platform untuk membuat **banyak agent chatbot**, mengisi **knowledge base** tiap agent, dan mengujinya di **playground** secara langsung. Ditenagai oleh Claude (`claude-opus-4-8`) dengan retrieval knowledge base sederhana (RAG).
+Platform untuk membuat **banyak agent chatbot**, mengisi **knowledge base** tiap agent, dan mengujinya di **playground** secara langsung. Mendukung **provider LLM apa pun yang OpenAI-compatible** dengan retrieval knowledge base sederhana (RAG).
 
 - **Backend**: Python + FastAPI
 - **Frontend**: Next.js (App Router) + Tailwind CSS
 - **Database**: SQLite (via SQLModel)
-- **LLM**: Anthropic Claude (streaming, adaptive thinking)
+- **LLM**: Endpoint OpenAI-compatible (OpenAI, OpenRouter, Together, Ollama, LM Studio, vLLM, dll) via OpenAI SDK — base URL, API key, dan model bisa dikustom
 
 ## Fitur
 
-- ✅ Membuat, mengedit, dan menghapus banyak agent (persona + system prompt + model)
+- ✅ Membuat, mengedit, dan menghapus banyak agent (persona + system prompt)
+- ✅ **Base URL, API key, dan model bisa dikustom** — global lewat `.env`, atau dioverride per-agent dari UI
 - ✅ Mengisi knowledge base tiap agent (tambah/hapus dokumen)
 - ✅ Playground untuk menguji agent dengan jawaban yang di-streaming
 - ✅ Retrieval otomatis: potongan knowledge base yang relevan disuntikkan ke konteks, lengkap dengan info sumber yang dipakai
@@ -29,13 +30,25 @@ python3 -m venv .venv
 source .venv/bin/activate           # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-cp .env.example .env                 # lalu isi ANTHROPIC_API_KEY
+cp .env.example .env                 # lalu isi LLM_BASE_URL, LLM_API_KEY, LLM_MODEL
 uvicorn app.main:app --reload --port 8000
 ```
 
 API berjalan di `http://localhost:8000` (dokumentasi interaktif di `/docs`).
 
-> **Catatan:** `ANTHROPIC_API_KEY` hanya dibutuhkan untuk fitur playground (chat).
+Default provider diatur lewat `.env`:
+
+```env
+LLM_BASE_URL=https://api.openai.com/v1   # atau OpenRouter/Together/Ollama/dll
+LLM_API_KEY=sk-xxxxx
+LLM_MODEL=gpt-4o-mini
+```
+
+Tiap agent bisa **mengoverride** Base URL / API Key / Model dari tab **Pengaturan**
+(kosongkan untuk memakai default `.env`). Jadi satu agent bisa pakai OpenAI, agent
+lain pakai Ollama lokal atau OpenRouter.
+
+> **Catatan:** API key hanya dibutuhkan untuk fitur playground (chat).
 > Membuat agent dan mengelola knowledge base tetap berjalan tanpa API key.
 
 ## Menjalankan Frontend

@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select
 
-from ..claude_client import stream_chat
 from ..database import get_session
+from ..llm_client import stream_chat
 from ..models import Document
 from ..rag import build_system_prompt, retrieve_context
 from ..schemas import ChatRequest
@@ -38,7 +38,9 @@ def chat(
     context = retrieve_context(documents, last_user_message)
     system_prompt = build_system_prompt(agent.system_prompt, context)
 
-    messages = [{"role": m.role, "content": m.content} for m in payload.messages]
+    # Format OpenAI: system prompt menjadi pesan pertama dalam daftar messages.
+    messages = [{"role": "system", "content": system_prompt}]
+    messages += [{"role": m.role, "content": m.content} for m in payload.messages]
     sources = [{"title": title, "excerpt": chunk} for title, chunk in context]
 
     def event_stream():
@@ -46,8 +48,9 @@ def chat(
         yield _sse("sources", {"sources": sources})
         try:
             for chunk in stream_chat(
+                base_url=agent.base_url,
+                api_key=agent.api_key,
                 model=agent.model,
-                system_prompt=system_prompt,
                 messages=messages,
             ):
                 yield _sse("delta", {"text": chunk})

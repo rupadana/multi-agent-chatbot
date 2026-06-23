@@ -116,6 +116,9 @@ function CreateAgentForm({ onCreated }: { onCreated: () => void }) {
   const [systemPrompt, setSystemPrompt] = useState(
     "Kamu adalah asisten AI yang ramah dan membantu."
   );
+  const [model, setModel] = useState("gpt-4o-mini");
+  const [baseUrl, setBaseUrl] = useState("");
+  const [apiKey, setApiKey] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -128,6 +131,9 @@ function CreateAgentForm({ onCreated }: { onCreated: () => void }) {
         name,
         description,
         system_prompt: systemPrompt,
+        model,
+        base_url: baseUrl,
+        api_key: apiKey,
       });
       onCreated();
     } catch (e) {
@@ -173,6 +179,46 @@ function CreateAgentForm({ onCreated }: { onCreated: () => void }) {
           Menentukan persona dan instruksi dasar agent.
         </p>
       </div>
+
+      <div className="grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:grid-cols-3">
+        <div className="sm:col-span-3">
+          <p className="text-sm font-semibold text-slate-700">
+            Konfigurasi LLM (OpenAI-compatible) — opsional
+          </p>
+          <p className="text-xs text-slate-400">
+            Kosongkan Base URL / API Key untuk memakai default server.
+          </p>
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">Model</label>
+          <input
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            placeholder="gpt-4o-mini"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">Base URL</label>
+          <input
+            value={baseUrl}
+            onChange={(e) => setBaseUrl(e.target.value)}
+            placeholder="default"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">API Key</label>
+          <input
+            type="password"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder="default"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+          />
+        </div>
+      </div>
+
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button
         disabled={saving}

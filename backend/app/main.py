@@ -33,4 +33,4 @@ app.include_router(chat.router)
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "model": settings.claude_model}
+    return {"status": "ok", "model": settings.llm_model, "base_url": settings.llm_base_url}
