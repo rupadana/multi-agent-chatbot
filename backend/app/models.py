@@ -20,6 +20,13 @@ class Agent(SQLModel, table=True):
     base_url: str | None = None
     api_key: str | None = None
 
+    # Guardrails (bisa dikonfigurasi user dari UI).
+    guardrails_enabled: bool = False
+    guardrail_instructions: str = ""
+    blocked_keywords: str = ""  # dipisah baris baru atau koma
+    max_input_chars: int = 0  # 0 = tanpa batas
+    refusal_message: str = "Maaf, saya tidak dapat membantu permintaan tersebut."
+
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
 

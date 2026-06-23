@@ -16,6 +16,14 @@ export default function AgentSettings({
   const [model, setModel] = useState(agent.model);
   const [baseUrl, setBaseUrl] = useState(agent.base_url ?? "");
   const [apiKey, setApiKey] = useState("");
+  // Guardrails
+  const [grEnabled, setGrEnabled] = useState(agent.guardrails_enabled);
+  const [grInstructions, setGrInstructions] = useState(
+    agent.guardrail_instructions
+  );
+  const [blockedKeywords, setBlockedKeywords] = useState(agent.blocked_keywords);
+  const [maxInputChars, setMaxInputChars] = useState(agent.max_input_chars);
+  const [refusalMessage, setRefusalMessage] = useState(agent.refusal_message);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +40,11 @@ export default function AgentSettings({
         system_prompt: systemPrompt,
         model,
         base_url: baseUrl,
+        guardrails_enabled: grEnabled,
+        guardrail_instructions: grInstructions,
+        blocked_keywords: blockedKeywords,
+        max_input_chars: maxInputChars,
+        refusal_message: refusalMessage,
       };
       // Hanya kirim api_key bila diubah (kosong = tidak diubah).
       if (apiKey.trim() !== "") data.api_key = apiKey;
@@ -128,6 +141,79 @@ export default function AgentSettings({
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
           />
         </div>
+      </div>
+
+      <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={grEnabled}
+            onChange={(e) => setGrEnabled(e.target.checked)}
+            className="h-4 w-4 rounded border-slate-300"
+          />
+          <span className="text-sm font-semibold text-slate-700">
+            Aktifkan Guardrails
+          </span>
+        </label>
+
+        {grEnabled && (
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                Aturan & batasan
+              </label>
+              <textarea
+                value={grInstructions}
+                onChange={(e) => setGrInstructions(e.target.value)}
+                rows={3}
+                placeholder="Mis: Hanya jawab seputar produk toko. Tolak pertanyaan medis, hukum, atau di luar topik."
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+              />
+              <p className="mt-1 text-xs text-slate-400">
+                Disuntikkan ke system prompt sebagai aturan wajib.
+              </p>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                Kata/frasa terlarang
+              </label>
+              <textarea
+                value={blockedKeywords}
+                onChange={(e) => setBlockedKeywords(e.target.value)}
+                rows={3}
+                placeholder="Satu per baris (atau pisah koma). Dicek pada input pengguna dan output model."
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  Batas panjang input (karakter)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={maxInputChars}
+                  onChange={(e) =>
+                    setMaxInputChars(Number(e.target.value) || 0)
+                  }
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+                />
+                <p className="mt-1 text-xs text-slate-400">0 = tanpa batas.</p>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  Pesan penolakan
+                </label>
+                <input
+                  value={refusalMessage}
+                  onChange={(e) => setRefusalMessage(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {msg && <p className="text-sm text-green-600">{msg}</p>}

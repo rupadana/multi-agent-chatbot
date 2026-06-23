@@ -9,6 +9,11 @@ export interface Agent {
   model: string;
   base_url: string | null;
   has_api_key: boolean;
+  guardrails_enabled: boolean;
+  guardrail_instructions: string;
+  blocked_keywords: string;
+  max_input_chars: number;
+  refusal_message: string;
   created_at: string;
   updated_at: string;
   document_count: number;
@@ -21,6 +26,11 @@ export interface AgentInput {
   model?: string;
   base_url?: string;
   api_key?: string;
+  guardrails_enabled?: boolean;
+  guardrail_instructions?: string;
+  blocked_keywords?: string;
+  max_input_chars?: number;
+  refusal_message?: string;
 }
 
 export interface KnowledgeDoc {
@@ -108,6 +118,7 @@ export async function streamChat(
   handlers: {
     onSources?: (sources: Source[]) => void;
     onDelta: (text: string) => void;
+    onGuardrail?: (stage: string, message: string, reason: string) => void;
     onError?: (message: string) => void;
     onDone?: () => void;
   },
@@ -150,6 +161,12 @@ export async function streamChat(
       const payload = JSON.parse(data);
       if (event === "sources") handlers.onSources?.(payload.sources || []);
       else if (event === "delta") handlers.onDelta(payload.text || "");
+      else if (event === "guardrail")
+        handlers.onGuardrail?.(
+          payload.stage || "",
+          payload.message || "",
+          payload.reason || ""
+        );
       else if (event === "error") handlers.onError?.(payload.message || "Error");
       else if (event === "done") handlers.onDone?.();
     }
