@@ -14,7 +14,12 @@ class Agent(SQLModel, table=True):
     name: str = Field(index=True)
     description: str = ""
     system_prompt: str = "Kamu adalah asisten AI yang ramah dan membantu."
-    model: str = "claude-opus-4-8"
+
+    # Konfigurasi LLM. base_url/api_key kosong = pakai default global dari env.
+    model: str = "gpt-4o-mini"
+    base_url: str | None = None
+    api_key: str | None = None
+
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
 

@@ -9,7 +9,9 @@ class AgentCreate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     description: str = ""
     system_prompt: str = "Kamu adalah asisten AI yang ramah dan membantu."
-    model: str = "claude-opus-4-8"
+    model: str = "gpt-4o-mini"
+    base_url: str | None = None
+    api_key: str | None = None
 
 
 class AgentUpdate(BaseModel):
@@ -17,6 +19,8 @@ class AgentUpdate(BaseModel):
     description: str | None = None
     system_prompt: str | None = None
     model: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
 
 
 class AgentRead(BaseModel):
@@ -25,6 +29,9 @@ class AgentRead(BaseModel):
     description: str
     system_prompt: str
     model: str
+    base_url: str | None = None
+    # API key tidak pernah dikembalikan mentah; cukup tahu sudah diset atau belum.
+    has_api_key: bool = False
     created_at: datetime
     updated_at: datetime
     document_count: int = 0

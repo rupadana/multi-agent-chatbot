@@ -8,8 +8,11 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    anthropic_api_key: str = ""
-    claude_model: str = "claude-opus-4-8"
+    # Default provider LLM (OpenAI-compatible). Dapat dioverride per-agent.
+    llm_base_url: str = "https://api.openai.com/v1"
+    llm_api_key: str = ""
+    llm_model: str = "gpt-4o-mini"
+
     database_url: str = "sqlite:///./chatbot.db"
     cors_origins: str = "http://localhost:3000"
 

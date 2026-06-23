@@ -20,10 +20,20 @@ def _to_read(session: Session, agent: Agent) -> AgentRead:
         description=agent.description,
         system_prompt=agent.system_prompt,
         model=agent.model,
+        base_url=agent.base_url,
+        has_api_key=bool(agent.api_key),
         created_at=agent.created_at,
         updated_at=agent.updated_at,
         document_count=count,
     )
+
+
+def _normalize(data: dict) -> dict:
+    """String kosong pada base_url/api_key dianggap 'pakai default global'."""
+    for key in ("base_url", "api_key"):
+        if key in data and isinstance(data[key], str) and data[key].strip() == "":
+            data[key] = None
+    return data
 
 
 def get_agent_or_404(agent_id: int, session: Session) -> Agent:
@@ -41,7 +51,7 @@ def list_agents(session: Session = Depends(get_session)):
 
 @router.post("", response_model=AgentRead, status_code=201)
 def create_agent(payload: AgentCreate, session: Session = Depends(get_session)):
-    agent = Agent(**payload.model_dump())
+    agent = Agent(**_normalize(payload.model_dump()))
     session.add(agent)
     session.commit()
     session.refresh(agent)
@@ -58,7 +68,7 @@ def update_agent(
     agent_id: int, payload: AgentUpdate, session: Session = Depends(get_session)
 ):
     agent = get_agent_or_404(agent_id, session)
-    data = payload.model_dump(exclude_unset=True)
+    data = _normalize(payload.model_dump(exclude_unset=True))
     for key, value in data.items():
         setattr(agent, key, value)
     agent.updated_at = datetime.now(timezone.utc)

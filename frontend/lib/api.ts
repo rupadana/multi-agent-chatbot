@@ -7,6 +7,8 @@ export interface Agent {
   description: string;
   system_prompt: string;
   model: string;
+  base_url: string | null;
+  has_api_key: boolean;
   created_at: string;
   updated_at: string;
   document_count: number;
@@ -17,6 +19,8 @@ export interface AgentInput {
   description?: string;
   system_prompt?: string;
   model?: string;
+  base_url?: string;
+  api_key?: string;
 }
 
 export interface KnowledgeDoc {
