@@ -5,6 +5,8 @@ import { ChatMessage, Source, streamChat } from "@/lib/api";
 
 interface Turn extends ChatMessage {
   sources?: Source[];
+  blocked?: boolean;
+  blockReason?: string;
 }
 
 export default function Playground({ agentId }: { agentId: number }) {
@@ -51,7 +53,22 @@ export default function Playground({ agentId }: { agentId: number }) {
         setTurns((prev) => {
           const next = [...prev];
           const last = next[next.length - 1];
+          // Abaikan delta bila pesan sudah diblokir guardrail.
+          if (last.blocked) return next;
           next[next.length - 1] = { ...last, content: last.content + chunk };
+          return next;
+        });
+        scrollDown();
+      },
+      onGuardrail: (stage, message, reason) => {
+        setTurns((prev) => {
+          const next = [...prev];
+          next[next.length - 1] = {
+            ...next[next.length - 1],
+            content: message,
+            blocked: true,
+            blockReason: `Guardrail (${stage}): ${reason}`,
+          };
           return next;
         });
         scrollDown();
@@ -98,9 +115,16 @@ export default function Playground({ agentId }: { agentId: number }) {
                 "max-w-[80%] rounded-2xl px-4 py-2 text-sm " +
                 (t.role === "user"
                   ? "bg-indigo-600 text-white"
-                  : "bg-slate-100 text-slate-800")
+                  : t.blocked
+                    ? "border border-amber-300 bg-amber-50 text-amber-800"
+                    : "bg-slate-100 text-slate-800")
               }
             >
+              {t.blocked && (
+                <p className="mb-1 flex items-center gap-1 text-xs font-medium text-amber-600">
+                  <span>⚠</span> Diblokir oleh guardrail
+                </p>
+              )}
               <p className="whitespace-pre-wrap">
                 {t.content || (streaming && i === turns.length - 1 ? "…" : "")}
               </p>

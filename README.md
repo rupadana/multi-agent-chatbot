@@ -11,6 +11,7 @@ Platform untuk membuat **banyak agent chatbot**, mengisi **knowledge base** tiap
 
 - ✅ Membuat, mengedit, dan menghapus banyak agent (persona + system prompt)
 - ✅ **Base URL, API key, dan model bisa dikustom** — global lewat `.env`, atau dioverride per-agent dari UI
+- ✅ **Guardrails yang bisa dikonfigurasi per-agent** — aturan/batasan topik (disuntik ke system prompt), kata/frasa terlarang (dicek di input & output), batas panjang input, dan pesan penolakan kustom
 - ✅ Mengisi knowledge base tiap agent (tambah/hapus dokumen)
 - ✅ Playground untuk menguji agent dengan jawaban yang di-streaming
 - ✅ Retrieval otomatis: potongan knowledge base yang relevan disuntikkan ke konteks, lengkap dengan info sumber yang dipakai
@@ -82,6 +83,21 @@ Buka `http://localhost:3000`.
 | `GET/POST` | `/api/agents/{id}/knowledge` | List / tambah dokumen |
 | `DELETE` | `/api/agents/{id}/knowledge/{doc_id}` | Hapus dokumen |
 | `POST` | `/api/agents/{id}/chat` | Chat streaming (SSE) |
+
+## Guardrails
+
+Tiap agent punya guardrails yang bisa diaktifkan dari tab **Pengaturan**, semuanya
+berjalan lokal tanpa panggilan LLM tambahan:
+
+1. **Aturan & batasan topik** — teks bebas yang disuntikkan ke system prompt sebagai
+   aturan wajib (mis. "Hanya jawab seputar produk toko").
+2. **Kata/frasa terlarang** — dicek pada **input pengguna** (sebelum LLM dipanggil)
+   dan pada **output model** (streaming dengan *hold-back buffer*, sehingga kata
+   terlarang tidak pernah sempat ter-stream walau terpotong antar-chunk).
+3. **Batas panjang input** — menolak pesan yang terlalu panjang.
+4. **Pesan penolakan kustom** — ditampilkan saat ada guardrail yang terpicu.
+
+Saat terpicu, playground menampilkan pesan dengan badge **⚠ Diblokir oleh guardrail**.
 
 ## Cara Kerja RAG
 

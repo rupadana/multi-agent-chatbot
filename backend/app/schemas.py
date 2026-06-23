@@ -5,6 +5,14 @@ from pydantic import BaseModel, Field
 
 
 # ---- Agent ----
+class GuardrailConfig(BaseModel):
+    guardrails_enabled: bool = False
+    guardrail_instructions: str = ""
+    blocked_keywords: str = ""
+    max_input_chars: int = Field(default=0, ge=0)
+    refusal_message: str = "Maaf, saya tidak dapat membantu permintaan tersebut."
+
+
 class AgentCreate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     description: str = ""
@@ -12,6 +20,12 @@ class AgentCreate(BaseModel):
     model: str = "gpt-4o-mini"
     base_url: str | None = None
     api_key: str | None = None
+    # Guardrails (opsional)
+    guardrails_enabled: bool = False
+    guardrail_instructions: str = ""
+    blocked_keywords: str = ""
+    max_input_chars: int = Field(default=0, ge=0)
+    refusal_message: str = "Maaf, saya tidak dapat membantu permintaan tersebut."
 
 
 class AgentUpdate(BaseModel):
@@ -21,6 +35,11 @@ class AgentUpdate(BaseModel):
     model: str | None = None
     base_url: str | None = None
     api_key: str | None = None
+    guardrails_enabled: bool | None = None
+    guardrail_instructions: str | None = None
+    blocked_keywords: str | None = None
+    max_input_chars: int | None = Field(default=None, ge=0)
+    refusal_message: str | None = None
 
 
 class AgentRead(BaseModel):
@@ -32,6 +51,11 @@ class AgentRead(BaseModel):
     base_url: str | None = None
     # API key tidak pernah dikembalikan mentah; cukup tahu sudah diset atau belum.
     has_api_key: bool = False
+    guardrails_enabled: bool = False
+    guardrail_instructions: str = ""
+    blocked_keywords: str = ""
+    max_input_chars: int = 0
+    refusal_message: str = ""
     created_at: datetime
     updated_at: datetime
     document_count: int = 0
