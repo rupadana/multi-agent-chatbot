@@ -38,7 +38,6 @@ uvicorn app.main:app --reload --port 8000
 ```
 
 API berjalan di `http://localhost:8000` (dokumentasi interaktif di `/docs`).
-
 Default provider diatur lewat `.env`:
 
 ```env
@@ -57,6 +56,21 @@ lain pakai Ollama lokal atau OpenRouter.
 
 > **Catatan:** API key hanya dibutuhkan untuk fitur playground (chat).
 > Membuat agent dan mengelola knowledge base tetap berjalan tanpa API key.
+
+## Menjalankan Test (Backend)
+
+Test memakai `pytest` dengan database SQLite sementara dan `stream_chat` yang
+ditambal, jadi **tidak perlu API key / panggilan LLM nyata**.
+
+```bash
+cd backend
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+pytest
+```
+
+Cakupan: autentikasi (register/login/me), CRUD agent + isolasi kepemilikan
+antar-user, knowledge base, dan chat SSE termasuk guardrails input/output.
 
 ## Menjalankan Frontend
 
