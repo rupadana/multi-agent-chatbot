@@ -1,7 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { AlertTriangle, RotateCcw, Send } from "lucide-react";
 import { ChatMessage, Source, streamChat } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 interface Turn extends ChatMessage {
   sources?: Source[];
@@ -88,20 +93,18 @@ export default function Playground({ agentId }: { agentId: number }) {
   };
 
   return (
-    <div className="flex h-[70vh] flex-col rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+    <Card className="flex h-[70vh] flex-col">
+      <div className="flex items-center justify-between border-b px-4 py-3">
         <h3 className="font-semibold">Playground</h3>
-        <button
-          onClick={reset}
-          className="text-sm text-slate-500 hover:text-slate-800"
-        >
+        <Button variant="ghost" size="sm" onClick={reset}>
+          <RotateCcw className="h-4 w-4" />
           Reset
-        </button>
+        </Button>
       </div>
 
       <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4">
         {turns.length === 0 && (
-          <p className="mt-10 text-center text-sm text-slate-400">
+          <p className="mt-10 text-center text-sm text-muted-foreground">
             Mulai percakapan untuk menguji agent ini.
           </p>
         )}
@@ -111,29 +114,30 @@ export default function Playground({ agentId }: { agentId: number }) {
             className={t.role === "user" ? "flex justify-end" : "flex justify-start"}
           >
             <div
-              className={
-                "max-w-[80%] rounded-2xl px-4 py-2 text-sm " +
-                (t.role === "user"
-                  ? "bg-indigo-600 text-white"
+              className={cn(
+                "max-w-[80%] rounded-2xl px-4 py-2 text-sm",
+                t.role === "user"
+                  ? "bg-primary text-primary-foreground"
                   : t.blocked
                     ? "border border-amber-300 bg-amber-50 text-amber-800"
-                    : "bg-slate-100 text-slate-800")
-              }
+                    : "bg-muted text-foreground"
+              )}
             >
               {t.blocked && (
                 <p className="mb-1 flex items-center gap-1 text-xs font-medium text-amber-600">
-                  <span>⚠</span> Diblokir oleh guardrail
+                  <AlertTriangle className="h-3.5 w-3.5" /> Diblokir oleh
+                  guardrail
                 </p>
               )}
               <p className="whitespace-pre-wrap">
                 {t.content || (streaming && i === turns.length - 1 ? "…" : "")}
               </p>
               {t.sources && t.sources.length > 0 && (
-                <div className="mt-2 border-t border-slate-300/50 pt-2">
-                  <p className="text-xs font-medium text-slate-500">
+                <div className="mt-2 border-t border-border/50 pt-2">
+                  <p className="text-xs font-medium text-muted-foreground">
                     Sumber knowledge base:
                   </p>
-                  <ul className="mt-1 list-disc pl-4 text-xs text-slate-500">
+                  <ul className="mt-1 list-disc pl-4 text-xs text-muted-foreground">
                     {t.sources.map((s, j) => (
                       <li key={j}>{s.title}</li>
                     ))}
@@ -146,26 +150,23 @@ export default function Playground({ agentId }: { agentId: number }) {
       </div>
 
       {error && (
-        <div className="border-t border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+        <div className="border-t border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">
           {error}
         </div>
       )}
 
-      <form onSubmit={send} className="flex gap-2 border-t border-slate-200 p-3">
-        <input
+      <form onSubmit={send} className="flex gap-2 border-t p-3">
+        <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ketik pesan…"
           disabled={streaming}
-          className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 disabled:bg-slate-50"
         />
-        <button
-          disabled={streaming || !input.trim()}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-        >
+        <Button type="submit" disabled={streaming || !input.trim()}>
+          <Send className="h-4 w-4" />
           {streaming ? "…" : "Kirim"}
-        </button>
+        </Button>
       </form>
-    </div>
+    </Card>
   );
 }

@@ -3,24 +3,33 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { Agent, api } from "@/lib/api";
+import RequireAuth from "@/components/RequireAuth";
 import AgentSettings from "@/components/AgentSettings";
 import KnowledgeBase from "@/components/KnowledgeBase";
 import Playground from "@/components/Playground";
-
-type Tab = "playground" | "knowledge" | "settings";
-
-const TABS: { key: Tab; label: string }[] = [
-  { key: "playground", label: "Playground" },
-  { key: "knowledge", label: "Knowledge Base" },
-  { key: "settings", label: "Pengaturan" },
-];
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 export default function AgentDetailPage() {
+  return (
+    <RequireAuth>
+      <AgentDetail />
+    </RequireAuth>
+  );
+}
+
+function AgentDetail() {
   const params = useParams();
   const agentId = Number(params.id);
   const [agent, setAgent] = useState<Agent | null>(null);
-  const [tab, setTab] = useState<Tab>("playground");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -34,47 +43,51 @@ export default function AgentDetailPage() {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-        {error}
-      </div>
+      <Alert variant="destructive">
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
     );
   }
 
-  if (!agent) return <p className="text-slate-500">Memuat…</p>;
+  if (!agent) return <p className="text-muted-foreground">Memuat…</p>;
 
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/" className="text-sm text-slate-500 hover:text-indigo-600">
-          ← Kembali
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" /> Kembali
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">{agent.name}</h1>
-        <p className="text-sm text-slate-500">
-          {agent.description || "Tanpa deskripsi"} ·{" "}
-          <span className="text-slate-400">{agent.model}</span>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <h1 className="text-2xl font-bold">{agent.name}</h1>
+          <Badge variant="outline">{agent.model}</Badge>
+          {agent.guardrails_enabled && (
+            <Badge variant="warning">Guardrails aktif</Badge>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {agent.description || "Tanpa deskripsi"}
         </p>
       </div>
 
-      <div className="flex gap-1 border-b border-slate-200">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={
-              "border-b-2 px-4 py-2 text-sm font-medium " +
-              (tab === t.key
-                ? "border-indigo-600 text-indigo-600"
-                : "border-transparent text-slate-500 hover:text-slate-800")
-            }
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === "playground" && <Playground agentId={agent.id} />}
-      {tab === "knowledge" && <KnowledgeBase agentId={agent.id} />}
-      {tab === "settings" && <AgentSettings agent={agent} onSaved={setAgent} />}
+      <Tabs defaultValue="playground">
+        <TabsList>
+          <TabsTrigger value="playground">Playground</TabsTrigger>
+          <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
+          <TabsTrigger value="settings">Pengaturan</TabsTrigger>
+        </TabsList>
+        <TabsContent value="playground">
+          <Playground agentId={agent.id} />
+        </TabsContent>
+        <TabsContent value="knowledge">
+          <KnowledgeBase agentId={agent.id} />
+        </TabsContent>
+        <TabsContent value="settings">
+          <AgentSettings agent={agent} onSaved={setAgent} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

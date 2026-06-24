@@ -6,8 +6,9 @@ from sqlmodel import Session, select
 
 from .. import guardrails
 from ..database import get_session
+from ..deps import get_current_user
 from ..llm_client import stream_chat
-from ..models import Document
+from ..models import Document, User
 from ..rag import build_system_prompt, retrieve_context
 from ..schemas import ChatRequest
 from .agents import get_agent_or_404
@@ -22,9 +23,12 @@ def _sse(event: str, data: dict) -> str:
 
 @router.post("")
 def chat(
-    agent_id: int, payload: ChatRequest, session: Session = Depends(get_session)
+    agent_id: int,
+    payload: ChatRequest,
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
 ):
-    agent = get_agent_or_404(agent_id, session)
+    agent = get_agent_or_404(agent_id, session, user)
 
     if payload.messages[-1].role != "user":
         raise HTTPException(

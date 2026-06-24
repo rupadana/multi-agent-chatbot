@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from ..database import get_session
-from ..models import Agent, Document
+from ..deps import get_current_user
+from ..models import Agent, Document, User
 from ..schemas import AgentCreate, AgentRead, AgentUpdate
 
 router = APIRouter(prefix="/api/agents", tags=["agents"])
@@ -41,22 +42,34 @@ def _normalize(data: dict) -> dict:
     return data
 
 
-def get_agent_or_404(agent_id: int, session: Session) -> Agent:
+def get_agent_or_404(agent_id: int, session: Session, user: User) -> Agent:
+    """Ambil agent dan pastikan ia milik `user`."""
     agent = session.get(Agent, agent_id)
-    if agent is None:
+    if agent is None or agent.owner_id != user.id:
         raise HTTPException(status_code=404, detail="Agent tidak ditemukan")
     return agent
 
 
 @router.get("", response_model=list[AgentRead])
-def list_agents(session: Session = Depends(get_session)):
-    agents = session.exec(select(Agent).order_by(Agent.created_at.desc())).all()
+def list_agents(
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    agents = session.exec(
+        select(Agent)
+        .where(Agent.owner_id == user.id)
+        .order_by(Agent.created_at.desc())
+    ).all()
     return [_to_read(session, a) for a in agents]
 
 
 @router.post("", response_model=AgentRead, status_code=201)
-def create_agent(payload: AgentCreate, session: Session = Depends(get_session)):
-    agent = Agent(**_normalize(payload.model_dump()))
+def create_agent(
+    payload: AgentCreate,
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    agent = Agent(owner_id=user.id, **_normalize(payload.model_dump()))
     session.add(agent)
     session.commit()
     session.refresh(agent)
@@ -64,15 +77,22 @@ def create_agent(payload: AgentCreate, session: Session = Depends(get_session)):
 
 
 @router.get("/{agent_id}", response_model=AgentRead)
-def get_agent(agent_id: int, session: Session = Depends(get_session)):
-    return _to_read(session, get_agent_or_404(agent_id, session))
+def get_agent(
+    agent_id: int,
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    return _to_read(session, get_agent_or_404(agent_id, session, user))
 
 
 @router.put("/{agent_id}", response_model=AgentRead)
 def update_agent(
-    agent_id: int, payload: AgentUpdate, session: Session = Depends(get_session)
+    agent_id: int,
+    payload: AgentUpdate,
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
 ):
-    agent = get_agent_or_404(agent_id, session)
+    agent = get_agent_or_404(agent_id, session, user)
     data = _normalize(payload.model_dump(exclude_unset=True))
     for key, value in data.items():
         setattr(agent, key, value)
@@ -84,7 +104,11 @@ def update_agent(
 
 
 @router.delete("/{agent_id}", status_code=204)
-def delete_agent(agent_id: int, session: Session = Depends(get_session)):
-    agent = get_agent_or_404(agent_id, session)
+def delete_agent(
+    agent_id: int,
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    agent = get_agent_or_404(agent_id, session, user)
     session.delete(agent)
     session.commit()

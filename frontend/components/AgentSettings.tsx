@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import { Agent, AgentInput, api } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function AgentSettings({
   agent,
@@ -60,170 +66,172 @@ export default function AgentSettings({
   };
 
   return (
-    <form
-      onSubmit={submit}
-      className="max-w-2xl space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
-    >
-      <div>
-        <label className="mb-1 block text-sm font-medium">Nama</label>
-        <input
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
-        />
-      </div>
-      <div>
-        <label className="mb-1 block text-sm font-medium">Deskripsi</label>
-        <input
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
-        />
-      </div>
-      <div>
-        <label className="mb-1 block text-sm font-medium">System Prompt</label>
-        <textarea
-          value={systemPrompt}
-          onChange={(e) => setSystemPrompt(e.target.value)}
-          rows={5}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
-        />
-      </div>
+    <Card className="max-w-2xl">
+      <CardContent className="pt-6">
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="s-name">Nama</Label>
+            <Input
+              id="s-name"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="s-desc">Deskripsi</Label>
+            <Input
+              id="s-desc"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="s-prompt">System Prompt</Label>
+            <Textarea
+              id="s-prompt"
+              value={systemPrompt}
+              onChange={(e) => setSystemPrompt(e.target.value)}
+              rows={5}
+            />
+          </div>
 
-      <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-        <p className="text-sm font-semibold text-slate-700">
-          Konfigurasi LLM (OpenAI-compatible)
-        </p>
-        <div>
-          <label className="mb-1 block text-sm font-medium">Model</label>
-          <input
-            required
-            list="model-suggestions"
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-            placeholder="gpt-4o-mini"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
-          />
-          <datalist id="model-suggestions">
-            <option value="gpt-4o-mini" />
-            <option value="gpt-4o" />
-            <option value="gpt-4.1-mini" />
-            <option value="llama3.1" />
-            <option value="qwen2.5" />
-            <option value="deepseek-chat" />
-          </datalist>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium">Base URL</label>
-          <input
-            value={baseUrl}
-            onChange={(e) => setBaseUrl(e.target.value)}
-            placeholder="Kosongkan untuk pakai default server"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
-          />
-          <p className="mt-1 text-xs text-slate-400">
-            Contoh: https://api.openai.com/v1, https://openrouter.ai/api/v1,
-            http://localhost:11434/v1 (Ollama).
-          </p>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium">API Key</label>
-          <input
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder={
-              agent.has_api_key
-                ? "•••••••• (tersimpan — isi untuk mengganti)"
-                : "Kosongkan untuk pakai default server"
-            }
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={grEnabled}
-            onChange={(e) => setGrEnabled(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-300"
-          />
-          <span className="text-sm font-semibold text-slate-700">
-            Aktifkan Guardrails
-          </span>
-        </label>
-
-        {grEnabled && (
-          <div className="space-y-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium">
-                Aturan & batasan
-              </label>
-              <textarea
-                value={grInstructions}
-                onChange={(e) => setGrInstructions(e.target.value)}
-                rows={3}
-                placeholder="Mis: Hanya jawab seputar produk toko. Tolak pertanyaan medis, hukum, atau di luar topik."
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+          <div className="space-y-4 rounded-lg border bg-muted/40 p-4">
+            <p className="text-sm font-semibold">
+              Konfigurasi LLM (OpenAI-compatible)
+            </p>
+            <div className="space-y-1.5">
+              <Label htmlFor="s-model">Model</Label>
+              <Input
+                id="s-model"
+                required
+                list="model-suggestions"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                placeholder="gpt-4o-mini"
               />
-              <p className="mt-1 text-xs text-slate-400">
-                Disuntikkan ke system prompt sebagai aturan wajib.
+              <datalist id="model-suggestions">
+                <option value="gpt-4o-mini" />
+                <option value="gpt-4o" />
+                <option value="gpt-4.1-mini" />
+                <option value="llama3.1" />
+                <option value="qwen2.5" />
+                <option value="deepseek-chat" />
+              </datalist>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="s-baseurl">Base URL</Label>
+              <Input
+                id="s-baseurl"
+                value={baseUrl}
+                onChange={(e) => setBaseUrl(e.target.value)}
+                placeholder="Kosongkan untuk pakai default server"
+              />
+              <p className="text-xs text-muted-foreground">
+                Contoh: https://api.openai.com/v1, https://openrouter.ai/api/v1,
+                http://localhost:11434/v1 (Ollama).
               </p>
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">
-                Kata/frasa terlarang
-              </label>
-              <textarea
-                value={blockedKeywords}
-                onChange={(e) => setBlockedKeywords(e.target.value)}
-                rows={3}
-                placeholder="Satu per baris (atau pisah koma). Dicek pada input pengguna dan output model."
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+            <div className="space-y-1.5">
+              <Label htmlFor="s-apikey">API Key</Label>
+              <Input
+                id="s-apikey"
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder={
+                  agent.has_api_key
+                    ? "•••••••• (tersimpan — isi untuk mengganti)"
+                    : "Kosongkan untuk pakai default server"
+                }
               />
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Batas panjang input (karakter)
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={maxInputChars}
-                  onChange={(e) =>
-                    setMaxInputChars(Number(e.target.value) || 0)
-                  }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
-                />
-                <p className="mt-1 text-xs text-slate-400">0 = tanpa batas.</p>
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Pesan penolakan
-                </label>
-                <input
-                  value={refusalMessage}
-                  onChange={(e) => setRefusalMessage(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
-                />
-              </div>
-            </div>
           </div>
-        )}
-      </div>
 
-      {msg && <p className="text-sm text-green-600">{msg}</p>}
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button
-        disabled={saving}
-        className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-      >
-        {saving ? "Menyimpan…" : "Simpan Perubahan"}
-      </button>
-    </form>
+          <div className="space-y-4 rounded-lg border bg-muted/40 p-4">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={grEnabled}
+                onChange={(e) => setGrEnabled(e.target.checked)}
+                className="h-4 w-4 rounded border-input accent-primary"
+              />
+              <span className="text-sm font-semibold">Aktifkan Guardrails</span>
+            </label>
+
+            {grEnabled && (
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="gr-instructions">Aturan &amp; batasan</Label>
+                  <Textarea
+                    id="gr-instructions"
+                    value={grInstructions}
+                    onChange={(e) => setGrInstructions(e.target.value)}
+                    rows={3}
+                    placeholder="Mis: Hanya jawab seputar produk toko. Tolak pertanyaan medis, hukum, atau di luar topik."
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Disuntikkan ke system prompt sebagai aturan wajib.
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="gr-keywords">Kata/frasa terlarang</Label>
+                  <Textarea
+                    id="gr-keywords"
+                    value={blockedKeywords}
+                    onChange={(e) => setBlockedKeywords(e.target.value)}
+                    rows={3}
+                    placeholder="Satu per baris (atau pisah koma). Dicek pada input pengguna dan output model."
+                  />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="gr-max">
+                      Batas panjang input (karakter)
+                    </Label>
+                    <Input
+                      id="gr-max"
+                      type="number"
+                      min={0}
+                      value={maxInputChars}
+                      onChange={(e) =>
+                        setMaxInputChars(Number(e.target.value) || 0)
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      0 = tanpa batas.
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="gr-refusal">Pesan penolakan</Label>
+                    <Input
+                      id="gr-refusal"
+                      value={refusalMessage}
+                      onChange={(e) => setRefusalMessage(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {msg && (
+            <Alert>
+              <AlertDescription className="text-green-600">
+                {msg}
+              </AlertDescription>
+            </Alert>
+          )}
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <Button type="submit" disabled={saving}>
+            {saving ? "Menyimpan…" : "Simpan Perubahan"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

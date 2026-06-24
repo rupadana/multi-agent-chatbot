@@ -4,3 +4,6 @@ openai>=1.50,<2
 sqlmodel==0.0.22
 pydantic-settings==2.7.1
 python-dotenv==1.0.1
+email-validator==2.2.0
+bcrypt==4.2.1
+PyJWT==2.10.1

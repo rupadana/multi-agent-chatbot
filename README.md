@@ -3,12 +3,14 @@
 Platform untuk membuat **banyak agent chatbot**, mengisi **knowledge base** tiap agent, dan mengujinya di **playground** secara langsung. Mendukung **provider LLM apa pun yang OpenAI-compatible** dengan retrieval knowledge base sederhana (RAG).
 
 - **Backend**: Python + FastAPI
-- **Frontend**: Next.js (App Router) + Tailwind CSS
+- **Frontend**: Next.js (App Router) + Tailwind CSS + **shadcn/ui**
 - **Database**: SQLite (via SQLModel)
+- **Autentikasi**: Registrasi/login berbasis **JWT** (bcrypt untuk hashing password); tiap pengguna hanya melihat agent miliknya
 - **LLM**: Endpoint OpenAI-compatible (OpenAI, OpenRouter, Together, Ollama, LM Studio, vLLM, dll) via OpenAI SDK — base URL, API key, dan model bisa dikustom
 
 ## Fitur
 
+- ✅ **Autentikasi**: daftar & login, sesi disimpan via token JWT; setiap agent + knowledge base terikat pada akun pemiliknya
 - ✅ Membuat, mengedit, dan menghapus banyak agent (persona + system prompt)
 - ✅ **Base URL, API key, dan model bisa dikustom** — global lewat `.env`, atau dioverride per-agent dari UI
 - ✅ **Guardrails yang bisa dikonfigurasi per-agent** — aturan/batasan topik (disuntik ke system prompt), kata/frasa terlarang (dicek di input & output), batas panjang input, dan pesan penolakan kustom
@@ -43,6 +45,10 @@ Default provider diatur lewat `.env`:
 LLM_BASE_URL=https://api.openai.com/v1   # atau OpenRouter/Together/Ollama/dll
 LLM_API_KEY=sk-xxxxx
 LLM_MODEL=gpt-4o-mini
+
+# WAJIB diganti dengan string acak panjang di produksi:
+JWT_SECRET=ubah-secret-ini-di-produksi
+ACCESS_TOKEN_EXPIRE_MINUTES=10080       # masa berlaku token (default 7 hari)
 ```
 
 Tiap agent bisa **mengoverride** Base URL / API Key / Model dari tab **Pengaturan**
@@ -66,6 +72,8 @@ Buka `http://localhost:3000`.
 
 ## Alur Pemakaian
 
+1. **Daftar / login** di `/register` atau `/login`. Token disimpan di browser
+   dan dipakai otomatis untuk semua permintaan berikutnya.
 1. Buat agent baru di halaman utama (beri nama + system prompt).
 2. Buka agent → tab **Knowledge Base** → tambahkan dokumen pengetahuan.
 3. Pindah ke tab **Playground** → mulai mengobrol. Jawaban akan memakai
@@ -74,9 +82,15 @@ Buka `http://localhost:3000`.
 
 ## Endpoint Utama (Backend)
 
+Semua endpoint `/api/agents/**` membutuhkan header `Authorization: Bearer <token>`
+yang didapat dari `/api/auth/login` atau `/api/auth/register`.
+
 | Method | Path | Keterangan |
 | ------ | ---- | ---------- |
-| `GET` | `/api/agents` | Daftar agent |
+| `POST` | `/api/auth/register` | Daftar akun, mengembalikan token + data user |
+| `POST` | `/api/auth/login` | Login, mengembalikan token + data user |
+| `GET` | `/api/auth/me` | Data user dari token (butuh Bearer token) |
+| `GET` | `/api/agents` | Daftar agent (milik user) |
 | `POST` | `/api/agents` | Buat agent |
 | `PUT` | `/api/agents/{id}` | Update agent |
 | `DELETE` | `/api/agents/{id}` | Hapus agent |
