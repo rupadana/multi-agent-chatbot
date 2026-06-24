@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Trash2 } from "lucide-react";
 import { api, KnowledgeDoc } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function KnowledgeBase({ agentId }: { agentId: number }) {
   const [docs, setDocs] = useState<KnowledgeDoc[]>([]);
@@ -51,70 +58,75 @@ export default function KnowledgeBase({ agentId }: { agentId: number }) {
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <form
-        onSubmit={submit}
-        className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
-      >
-        <h3 className="font-semibold">Tambah Dokumen</h3>
-        <div>
-          <label className="mb-1 block text-sm font-medium">Judul</label>
-          <input
-            required
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Misal: Kebijakan Pengembalian"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium">Isi</label>
-          <textarea
-            required
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={8}
-            placeholder="Tempel teks pengetahuan di sini…"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
-          />
-        </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          disabled={saving}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-        >
-          {saving ? "Menyimpan…" : "Simpan Dokumen"}
-        </button>
-      </form>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Tambah Dokumen</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={submit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="kb-title">Judul</Label>
+              <Input
+                id="kb-title"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Misal: Kebijakan Pengembalian"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="kb-content">Isi</Label>
+              <Textarea
+                id="kb-content"
+                required
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                rows={8}
+                placeholder="Tempel teks pengetahuan di sini…"
+              />
+            </div>
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            <Button type="submit" disabled={saving}>
+              {saving ? "Menyimpan…" : "Simpan Dokumen"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       <div className="space-y-3">
-        <h3 className="font-semibold">
-          Dokumen ({docs.length})
-        </h3>
+        <h3 className="font-semibold">Dokumen ({docs.length})</h3>
         {loading ? (
-          <p className="text-slate-500">Memuat…</p>
+          <p className="text-muted-foreground">Memuat…</p>
         ) : docs.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
-            Belum ada dokumen. Knowledge base kosong.
-          </p>
+          <Card className="border-dashed">
+            <CardContent className="py-6 text-center text-sm text-muted-foreground">
+              Belum ada dokumen. Knowledge base kosong.
+            </CardContent>
+          </Card>
         ) : (
           docs.map((d) => (
-            <div
-              key={d.id}
-              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-            >
-              <div className="flex items-start justify-between">
-                <h4 className="font-medium">{d.title}</h4>
-                <button
-                  onClick={() => remove(d.id)}
-                  className="text-xs text-red-500 hover:underline"
-                >
-                  Hapus
-                </button>
-              </div>
-              <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-sm text-slate-500">
-                {d.content}
-              </p>
-            </div>
+            <Card key={d.id}>
+              <CardContent className="pt-4">
+                <div className="flex items-start justify-between gap-2">
+                  <h4 className="font-medium">{d.title}</h4>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-destructive hover:text-destructive"
+                    onClick={() => remove(d.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-sm text-muted-foreground">
+                  {d.content}
+                </p>
+              </CardContent>
+            </Card>
           ))
         )}
       </div>

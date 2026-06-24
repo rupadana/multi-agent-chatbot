@@ -1,6 +1,42 @@
 export const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+const TOKEN_KEY = "mac_token";
+
+export function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(TOKEN_KEY);
+}
+
+export function setToken(token: string | null) {
+  if (typeof window === "undefined") return;
+  if (token) window.localStorage.setItem(TOKEN_KEY, token);
+  else window.localStorage.removeItem(TOKEN_KEY);
+}
+
+/** Gabungkan header default + Authorization bila ada token. */
+function authHeaders(extra?: HeadersInit): HeadersInit {
+  const headers: Record<string, string> = { ...(extra as Record<string, string>) };
+  const token = getToken();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  return headers;
+}
+
+/** Dilempar saat server membalas 401 — dipakai UI untuk redirect ke login. */
+export class UnauthorizedError extends Error {
+  constructor(message = "Sesi berakhir. Silakan login kembali.") {
+    super(message);
+    this.name = "UnauthorizedError";
+  }
+}
+
+export interface User {
+  id: number;
+  email: string;
+  name: string;
+  created_at: string;
+}
+
 export interface Agent {
   id: number;
   name: string;
@@ -52,6 +88,9 @@ export interface Source {
 }
 
 async function handle<T>(res: Response): Promise<T> {
+  if (res.status === 401) {
+    throw new UnauthorizedError();
+  }
   if (!res.ok) {
     let detail = res.statusText;
     try {
@@ -66,46 +105,74 @@ async function handle<T>(res: Response): Promise<T> {
   return res.json();
 }
 
+export const auth = {
+  register: (data: { email: string; password: string; name?: string }) =>
+    fetch(`${API_URL}/api/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }).then((r) => handle<{ access_token: string; token_type: string; user: User }>(r)),
+
+  login: (data: { email: string; password: string }) =>
+    fetch(`${API_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }).then((r) => handle<{ access_token: string; token_type: string; user: User }>(r)),
+
+  me: () =>
+    fetch(`${API_URL}/api/auth/me`, { headers: authHeaders() }).then((r) =>
+      handle<User>(r)
+    ),
+};
+
 export const api = {
-  listAgents: () => fetch(`${API_URL}/api/agents`).then((r) => handle<Agent[]>(r)),
+  listAgents: () =>
+    fetch(`${API_URL}/api/agents`, { headers: authHeaders() }).then((r) =>
+      handle<Agent[]>(r)
+    ),
 
   getAgent: (id: number) =>
-    fetch(`${API_URL}/api/agents/${id}`).then((r) => handle<Agent>(r)),
+    fetch(`${API_URL}/api/agents/${id}`, { headers: authHeaders() }).then((r) =>
+      handle<Agent>(r)
+    ),
 
   createAgent: (data: AgentInput) =>
     fetch(`${API_URL}/api/agents`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(data),
     }).then((r) => handle<Agent>(r)),
 
   updateAgent: (id: number, data: Partial<AgentInput>) =>
     fetch(`${API_URL}/api/agents/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(data),
     }).then((r) => handle<Agent>(r)),
 
   deleteAgent: (id: number) =>
-    fetch(`${API_URL}/api/agents/${id}`, { method: "DELETE" }).then((r) =>
-      handle<void>(r)
-    ),
+    fetch(`${API_URL}/api/agents/${id}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    }).then((r) => handle<void>(r)),
 
   listDocs: (agentId: number) =>
-    fetch(`${API_URL}/api/agents/${agentId}/knowledge`).then((r) =>
-      handle<KnowledgeDoc[]>(r)
-    ),
+    fetch(`${API_URL}/api/agents/${agentId}/knowledge`, {
+      headers: authHeaders(),
+    }).then((r) => handle<KnowledgeDoc[]>(r)),
 
   addDoc: (agentId: number, data: { title: string; content: string }) =>
     fetch(`${API_URL}/api/agents/${agentId}/knowledge`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(data),
     }).then((r) => handle<KnowledgeDoc>(r)),
 
   deleteDoc: (agentId: number, docId: number) =>
     fetch(`${API_URL}/api/agents/${agentId}/knowledge/${docId}`, {
       method: "DELETE",
+      headers: authHeaders(),
     }).then((r) => handle<void>(r)),
 };
 
@@ -126,10 +193,15 @@ export async function streamChat(
 ) {
   const res = await fetch(`${API_URL}/api/agents/${agentId}/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ messages }),
     signal,
   });
+
+  if (res.status === 401) {
+    handlers.onError?.("Sesi berakhir. Silakan login kembali.");
+    return;
+  }
 
   if (!res.ok || !res.body) {
     const msg = await res.text().catch(() => "Gagal menghubungi server");

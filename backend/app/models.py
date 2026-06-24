@@ -7,10 +7,26 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+class User(SQLModel, table=True):
+    """Akun pengguna yang memiliki agent-agent miliknya sendiri."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    email: str = Field(index=True, unique=True)
+    name: str = ""
+    password_hash: str = ""
+    created_at: datetime = Field(default_factory=_now)
+
+    agents: list["Agent"] = Relationship(
+        back_populates="owner",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
+
+
 class Agent(SQLModel, table=True):
     """Sebuah agent yang bisa dikonfigurasi pengguna."""
 
     id: int | None = Field(default=None, primary_key=True)
+    owner_id: int = Field(foreign_key="user.id", index=True)
     name: str = Field(index=True)
     description: str = ""
     system_prompt: str = "Kamu adalah asisten AI yang ramah dan membantu."
@@ -30,6 +46,7 @@ class Agent(SQLModel, table=True):
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
 
+    owner: User | None = Relationship(back_populates="agents")
     documents: list["Document"] = Relationship(
         back_populates="agent",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
