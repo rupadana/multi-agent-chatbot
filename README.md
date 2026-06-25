@@ -17,6 +17,7 @@ Platform untuk membuat **banyak agent chatbot**, mengisi **knowledge base** tiap
 - ✅ Mengisi knowledge base tiap agent (tambah/hapus dokumen)
 - ✅ Playground untuk menguji agent dengan jawaban yang di-streaming
 - ✅ Retrieval otomatis: potongan knowledge base yang relevan disuntikkan ke konteks, lengkap dengan info sumber yang dipakai
+- ✅ **Integrasi kanal pesan**: hubungkan agent ke **WhatsApp** (via [WAHA](https://waha.devlike.pro)) dan **Telegram** — pesan masuk dijawab otomatis oleh agent (lengkap dengan RAG + guardrails)
 
 ## Struktur
 
@@ -111,6 +112,10 @@ yang didapat dari `/api/auth/login` atau `/api/auth/register`.
 | `GET/POST` | `/api/agents/{id}/knowledge` | List / tambah dokumen |
 | `DELETE` | `/api/agents/{id}/knowledge/{doc_id}` | Hapus dokumen |
 | `POST` | `/api/agents/{id}/chat` | Chat streaming (SSE) |
+| `GET/POST` | `/api/agents/{id}/integrations` | List / tambah integrasi kanal |
+| `PUT/DELETE` | `/api/integrations/{id}` | Update / hapus integrasi |
+| `POST` | `/api/integrations/{id}/connect` | Daftarkan webhook ke provider (auto) |
+| `POST` | `/api/integrations/webhook/{token}` | Webhook masuk dari provider (token auth) |
 
 ## Guardrails
 
@@ -126,6 +131,41 @@ berjalan lokal tanpa panggilan LLM tambahan:
 4. **Pesan penolakan kustom** — ditampilkan saat ada guardrail yang terpicu.
 
 Saat terpicu, playground menampilkan pesan dengan badge **⚠ Diblokir oleh guardrail**.
+
+## Integrasi (WhatsApp & Telegram)
+
+Tiap agent bisa dihubungkan ke kanal pesan dari tab **Integrasi**. Pesan masuk
+dari pelanggan akan dijawab otomatis oleh agent (memakai knowledge base +
+guardrails yang sama dengan playground).
+
+**Cara kerja:** provider (WAHA untuk WhatsApp, Telegram Bot API) mengirim pesan
+masuk ke **URL webhook** unik milik tiap integrasi. URL itu memuat token rahasia
+sebagai autentikasi (provider tidak membawa JWT). Backend membuat balasan lalu
+mengirimkannya kembali lewat provider — pemrosesan dilakukan di background agar
+webhook tetap dibalas cepat.
+
+Agar URL webhook absolut bisa dibuat & fitur **Hubungkan** (auto-config) bekerja,
+set `PUBLIC_BASE_URL` di `backend/.env` ke alamat publik backend
+(mis. `https://bot.contoh.com`).
+
+### WhatsApp (WAHA)
+
+1. Jalankan [WAHA](https://waha.devlike.pro) (mis. via Docker) dan catat base URL
+   + API key-nya.
+2. Tab **Integrasi** → tambah kanal **WhatsApp (WAHA)** → isi Base URL, API Key,
+   dan nama session.
+3. Klik **Hubungkan** — backend akan memanggil `POST /api/sessions/start` di WAHA
+   dengan webhook event `message`. Scan QR di WAHA bila diminta.
+
+### Telegram
+
+1. Buat bot lewat **@BotFather**, salin **bot token**.
+2. Tab **Integrasi** → tambah kanal **Telegram** → tempel bot token.
+3. Klik **Hubungkan** — backend memverifikasi token (`getMe`) dan mendaftarkan
+   webhook (`setWebhook`).
+
+> Tanpa `PUBLIC_BASE_URL`, kamu tetap bisa menyalin path webhook dari UI dan
+> mendaftarkannya manual di sisi provider.
 
 ## Cara Kerja RAG
 

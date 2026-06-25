@@ -108,3 +108,43 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[ChatMessage] = Field(min_length=1)
+
+
+# ---- Integrasi (WhatsApp/Telegram/dll) ----
+IntegrationType = Literal["whatsapp", "telegram"]
+
+
+class IntegrationCreate(BaseModel):
+    type: IntegrationType
+    enabled: bool = True
+    provider_url: str = ""
+    api_key: str = ""
+    session_name: str = "default"
+
+
+class IntegrationUpdate(BaseModel):
+    enabled: bool | None = None
+    provider_url: str | None = None
+    api_key: str | None = None
+    session_name: str | None = None
+
+
+class IntegrationRead(BaseModel):
+    id: int
+    agent_id: int
+    type: IntegrationType
+    enabled: bool
+    provider_url: str
+    session_name: str
+    # Kredensial tidak pernah dikembalikan mentah.
+    has_api_key: bool = False
+    # Path & URL webhook untuk dikonfigurasi di sisi provider (berisi token).
+    webhook_path: str
+    webhook_url: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class IntegrationConnectResult(BaseModel):
+    ok: bool
+    detail: str

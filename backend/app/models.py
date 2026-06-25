@@ -51,6 +51,10 @@ class Agent(SQLModel, table=True):
         back_populates="agent",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
+    integrations: list["Integration"] = Relationship(
+        back_populates="agent",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
 
 
 class Document(SQLModel, table=True):
@@ -63,3 +67,29 @@ class Document(SQLModel, table=True):
     created_at: datetime = Field(default_factory=_now)
 
     agent: Agent | None = Relationship(back_populates="documents")
+
+
+class Integration(SQLModel, table=True):
+    """Koneksi sebuah agent ke kanal pesan (WhatsApp via WAHA, Telegram, dll)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    agent_id: int = Field(foreign_key="agent.id", index=True)
+    type: str = Field(index=True)  # "whatsapp" | "telegram"
+    enabled: bool = True
+
+    # Konfigurasi koneksi (arti per-tipe):
+    # - whatsapp (WAHA): provider_url = base URL WAHA, api_key = X-Api-Key,
+    #   session_name = nama session WAHA.
+    # - telegram: api_key = bot token; provider_url & session_name tidak dipakai.
+    provider_url: str = ""
+    api_key: str = ""
+    session_name: str = "default"
+
+    # Token rahasia yang disematkan di URL webhook untuk mengautentikasi pesan
+    # masuk dari provider (provider tidak bisa membawa JWT pengguna).
+    webhook_token: str = Field(index=True, unique=True)
+
+    created_at: datetime = Field(default_factory=_now)
+    updated_at: datetime = Field(default_factory=_now)
+
+    agent: Agent | None = Relationship(back_populates="integrations")
