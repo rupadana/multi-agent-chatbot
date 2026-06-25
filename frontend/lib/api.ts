@@ -169,6 +169,23 @@ export const api = {
       body: JSON.stringify(data),
     }).then((r) => handle<KnowledgeDoc>(r)),
 
+  updateDoc: (agentId: number, docId: number, data: { title: string; content: string }) =>
+    fetch(`${API_URL}/api/agents/${agentId}/knowledge/${docId}`, {
+      method: "PUT",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(data),
+    }).then((r) => handle<KnowledgeDoc>(r)),
+
+  uploadDoc: (agentId: number, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return fetch(`${API_URL}/api/agents/${agentId}/knowledge/upload`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: formData,
+    }).then((r) => handle<KnowledgeDoc>(r));
+  },
+
   deleteDoc: (agentId: number, docId: number) =>
     fetch(`${API_URL}/api/agents/${agentId}/knowledge/${docId}`, {
       method: "DELETE",

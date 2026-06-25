@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
-import SiteHeader from "@/components/SiteHeader";
+import ClientLayout from "@/components/ClientLayout";
 
 export const metadata: Metadata = {
   title: "Multi-Agent Chatbot",
@@ -17,8 +17,7 @@ export default function RootLayout({
     <html lang="id">
       <body>
         <AuthProvider>
-          <SiteHeader />
-          <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
+          <ClientLayout>{children}</ClientLayout>
         </AuthProvider>
       </body>
     </html>

@@ -19,11 +19,13 @@ def parse_keywords(raw: str) -> list[str]:
 
 
 def _contains(text: str, keywords: list[str]) -> str | None:
-    """Kembalikan kata terlarang pertama yang ditemukan, atau None."""
+    """Kembalikan kata terlarang pertama yang ditemukan (sebagai kata utuh), atau None."""
     lowered = text.lower()
     for kw in keywords:
-        if kw and kw in lowered:
-            return kw
+        if kw:
+            pattern = re.compile(rf"\b{re.escape(kw.lower())}\b")
+            if pattern.search(lowered):
+                return kw
     return None
 
 

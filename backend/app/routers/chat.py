@@ -64,7 +64,18 @@ def chat(
     documents: list[Document] = session.exec(
         select(Document).where(Document.agent_id == agent_id)
     ).all()
-    context = retrieve_context(documents, last_user_message)
+    # Ambil history pesan user (gabungkan maksimal 2 pesan terakhir milik user)
+    # untuk membantu pencarian konteks pada percakapan multi-turn.
+    user_messages = [m.content for m in payload.messages if m.role == "user"]
+    search_query = " ".join(user_messages[-2:]) if user_messages else last_user_message
+
+    context = retrieve_context(
+        documents,
+        search_query,
+        agent_base_url=agent.base_url,
+        agent_api_key=agent.api_key,
+        agent_model=agent.model
+    )
     system_prompt = build_system_prompt(agent.system_prompt, context)
 
     # Guardrails: suntik aturan tambahan ke system prompt.

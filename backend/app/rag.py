@@ -10,6 +10,9 @@ import math
 import re
 from collections import Counter
 
+from openai import OpenAI
+
+from .llm_client import resolve
 from .models import Document
 
 _WORD_RE = re.compile(r"\w+", re.UNICODE)
@@ -19,6 +22,9 @@ _STOPWORDS = {
     "ini", "itu", "atau", "juga", "akan", "dalam", "tidak", "ada", "saya",
     "the", "a", "an", "is", "are", "to", "of", "and", "or", "in", "on",
     "for", "with", "this", "that", "it", "as", "be", "by",
+    "masih", "mau", "ya", "kok", "gimana", "gmn", "saja", "sih", "dong",
+    "kah", "lah", "tapi", "kalau", "kalo", "jika", "ingin", "bisa", "boleh",
+    "apakah", "bagaimana", "kenapa", "mengapa", "ada", "adalah", "itu", "ini"
 }
 
 
@@ -51,22 +57,70 @@ def _chunk_text(text: str, chunk_size: int = 600, overlap: int = 100) -> list[st
     return chunks or ([text] if text.strip() else [])
 
 
+def _expand_query(
+    query: str,
+    base_url: str | None,
+    api_key: str | None,
+    model: str | None,
+) -> str:
+    """Gunakan LLM secara sinkron untuk menghasilkan variasi kata kunci dan sinonim pencarian."""
+    url, key, mdl = resolve(base_url, api_key, model)
+    if not key:
+        return query
+
+    clean_words = _tokenize(query)
+    if not clean_words:
+        return query
+
+    try:
+        client = OpenAI(base_url=url, api_key=key)
+        prompt = f"tuliskan beberapa kata sinonim dari kata-kata berikut (sebutkan juga kata dasarnya tanpa akhiran/imbuhan): {', '.join(clean_words)}"
+        response = client.chat.completions.create(
+            model=mdl,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=200,
+            temperature=0.1,
+        )
+        expanded = response.choices[0].message.content
+        if expanded:
+            expanded_cleaned = expanded.strip().strip('"').strip("'")
+            return f"{query}, {expanded_cleaned}"
+    except Exception as e:
+        print(f"Gagal melakukan query expansion: {e}")
+    
+    return query
+
+
 def retrieve_context(
-    documents: list[Document], query: str, top_k: int = 4
+    documents: list[Document],
+    query: str,
+    agent_base_url: str | None = None,
+    agent_api_key: str | None = None,
+    agent_model: str | None = None,
+    top_k: int = 4,
 ) -> list[tuple[str, str]]:
     """Kembalikan daftar (judul, potongan teks) paling relevan dengan query.
 
-    Mengembalikan list kosong jika tidak ada knowledge base atau tidak ada irisan
-    kata sama sekali.
+    Menggunakan AI Query Expansion jika agent_api_key disediakan untuk mengatasi gap semantik (sinonim).
     """
-    query_terms = Counter(_tokenize(query))
-    if not query_terms or not documents:
+    if not documents:
+        return []
+
+    # Lakukan ekspansi kueri jika konfigurasi API tersedia
+    final_query = query
+    if agent_api_key:
+        final_query = _expand_query(query, agent_base_url, agent_api_key, agent_model)
+
+    query_terms = Counter(_tokenize(final_query))
+    if not query_terms:
         return []
 
     scored: list[tuple[float, str, str]] = []
     for doc in documents:
         for chunk in _chunk_text(doc.content):
-            chunk_terms = Counter(_tokenize(chunk))
+            # Gabungkan judul dan potongan konten agar judul ikut dicocokkan kata kuncinya.
+            combined_text = f"{doc.title} {chunk}"
+            chunk_terms = Counter(_tokenize(combined_text))
             if not chunk_terms:
                 continue
             # Skor = jumlah bobot kata query yang muncul, dinormalisasi panjang chunk.
