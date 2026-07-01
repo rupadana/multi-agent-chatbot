@@ -77,6 +77,30 @@ export interface KnowledgeDoc {
   created_at: string;
 }
 
+export type IntegrationType = "whatsapp" | "telegram";
+
+export interface Integration {
+  id: number;
+  agent_id: number;
+  type: IntegrationType;
+  enabled: boolean;
+  provider_url: string;
+  session_name: string;
+  has_api_key: boolean;
+  webhook_path: string;
+  webhook_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IntegrationInput {
+  type: IntegrationType;
+  enabled?: boolean;
+  provider_url?: string;
+  api_key?: string;
+  session_name?: string;
+}
+
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
@@ -191,6 +215,37 @@ export const api = {
       method: "DELETE",
       headers: authHeaders(),
     }).then((r) => handle<void>(r)),
+
+  listIntegrations: (agentId: number) =>
+    fetch(`${API_URL}/api/agents/${agentId}/integrations`, {
+      headers: authHeaders(),
+    }).then((r) => handle<Integration[]>(r)),
+
+  createIntegration: (agentId: number, data: IntegrationInput) =>
+    fetch(`${API_URL}/api/agents/${agentId}/integrations`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(data),
+    }).then((r) => handle<Integration>(r)),
+
+  updateIntegration: (id: number, data: Partial<IntegrationInput>) =>
+    fetch(`${API_URL}/api/integrations/${id}`, {
+      method: "PUT",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(data),
+    }).then((r) => handle<Integration>(r)),
+
+  deleteIntegration: (id: number) =>
+    fetch(`${API_URL}/api/integrations/${id}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    }).then((r) => handle<void>(r)),
+
+  connectIntegration: (id: number) =>
+    fetch(`${API_URL}/api/integrations/${id}/connect`, {
+      method: "POST",
+      headers: authHeaders(),
+    }).then((r) => handle<{ ok: boolean; detail: string }>(r)),
 };
 
 /**

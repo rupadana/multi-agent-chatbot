@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24 * 7  # 7 hari
 
+    # URL publik backend ini (mis. https://bot.contoh.com) — dipakai untuk
+    # menyusun URL webhook absolut bagi provider integrasi (WAHA, Telegram).
+    # Kosongkan bila tidak dipakai; UI akan menampilkan path relatif saja.
+    public_base_url: str = ""
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

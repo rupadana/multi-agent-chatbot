@@ -3,21 +3,23 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { 
-  ArrowLeft, 
-  ChevronDown, 
-  Trash2, 
-  Share2, 
+import {
+  ArrowLeft,
+  ChevronDown,
+  Trash2,
+  Share2,
   Settings2,
   Database,
   Play,
-  X
+  X,
+  Plug
 } from "lucide-react";
 import { Agent, api } from "@/lib/api";
 import RequireAuth from "@/components/RequireAuth";
 import AgentSettings from "@/components/AgentSettings";
 import KnowledgeBase from "@/components/KnowledgeBase";
 import Playground from "@/components/Playground";
+import Integrations from "@/components/Integrations";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -36,7 +38,7 @@ function AgentDetail() {
   const [agent, setAgent] = useState<Agent | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"playground" | "knowledge" | "settings">("playground");
+  const [activeTab, setActiveTab] = useState<"playground" | "knowledge" | "integrations" | "settings">("playground");
   const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
@@ -89,14 +91,21 @@ function AgentDetail() {
     );
   }
 
+  const sidebarTitle: Record<typeof activeTab, string> = {
+    playground: "",
+    knowledge: "Knowledge Base",
+    integrations: "Integrasi",
+    settings: "Settings / Pengaturan",
+  };
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full">
       {/* Workspace Header */}
       <header className="flex items-center justify-between border-b border-slate-100 px-6 py-3.5 shrink-0 select-none">
-        
+
         {/* Left: Dropdown Selector & Model */}
         <div className="relative">
-          <button 
+          <button
             onClick={() => setShowDropdown(!showDropdown)}
             className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-50 border border-slate-200/40 rounded-xl transition-all text-sm font-semibold text-slate-800"
           >
@@ -142,6 +151,13 @@ function AgentDetail() {
             <span>Knowledge Base</span>
           </button>
           <button
+            onClick={() => setActiveTab("integrations")}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === "integrations" ? "bg-white text-slate-900 shadow-sm font-bold" : "text-slate-500 hover:text-slate-800"}`}
+          >
+            <Plug className="h-3 w-3" />
+            <span>Integrasi</span>
+          </button>
+          <button
             onClick={() => setActiveTab("settings")}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === "settings" ? "bg-white text-slate-900 shadow-sm font-bold" : "text-slate-500 hover:text-slate-800"}`}
           >
@@ -152,7 +168,7 @@ function AgentDetail() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
-          <button 
+          <button
             onClick={removeAgent}
             className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 border border-slate-200/20 rounded-xl transition-all"
             title="Hapus Agent"
@@ -169,15 +185,15 @@ function AgentDetail() {
           <Playground agentId={agent.id} />
         </div>
 
-        {/* Right: Knowledge Base & Settings Sidebar Drawer */}
+        {/* Right: Sidebar Drawer for Knowledge Base, Integrations & Settings */}
         {activeTab !== "playground" && (
           <div className="w-[450px] shrink-0 border-l border-slate-100 flex flex-col h-full bg-slate-50/50 overflow-hidden animate-in slide-in-from-right duration-300">
             {/* Sidebar Header */}
             <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-white shrink-0">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                {activeTab === "knowledge" ? "Knowledge Base" : "Settings / Pengaturan"}
+                {sidebarTitle[activeTab]}
               </h3>
-              <button 
+              <button
                 onClick={() => setActiveTab("playground")}
                 className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-50 transition-colors"
                 title="Tutup Panel"
@@ -189,6 +205,8 @@ function AgentDetail() {
             <div className="flex-1 overflow-y-auto p-5">
               {activeTab === "knowledge" ? (
                 <KnowledgeBase agentId={agent.id} />
+              ) : activeTab === "integrations" ? (
+                <Integrations agentId={agent.id} />
               ) : (
                 <AgentSettings agent={agent} onSaved={setAgent} />
               )}
